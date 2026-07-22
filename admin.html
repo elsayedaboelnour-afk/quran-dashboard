@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>لوحة الإدارة - دار ابن الجزري</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* Admin specific styles overrriding some defaults */
+    body {
+      background: var(--bg-dark);
+      overflow-y: auto;
+      padding: 2rem;
+    }
+    .admin-container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: rgba(18, 30, 24, 0.85);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      padding: 2rem;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    }
+    h1 { color: var(--gold); text-align: center; margin-bottom: 2rem; font-family: var(--font-ui); }
+    h2 { color: var(--gold-pale); font-family: var(--font-ui); margin-top: 2rem; margin-bottom: 1rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem; }
+    
+    .form-group { margin-bottom: 1rem; }
+    label { display: block; color: var(--text-light); margin-bottom: 0.5rem; font-weight: bold; }
+    input[type="text"], input[type="password"], textarea {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid var(--glass-border);
+      background: rgba(0,0,0,0.2);
+      color: white;
+      border-radius: 8px;
+      font-family: var(--font-ui);
+    }
+    textarea { resize: vertical; min-height: 80px; }
+    button {
+      background: var(--gold);
+      color: #121e18;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      font-family: var(--font-ui);
+      transition: opacity 0.2s;
+    }
+    button:hover { opacity: 0.9; }
+    .btn-danger { background: #e74c3c; color: white; }
+    
+    .item-list { display: flex; flex-direction: column; gap: 1rem; }
+    .item-card {
+      background: rgba(255,255,255,0.05);
+      padding: 1rem;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .item-actions { display: flex; gap: 0.5rem; }
+
+    /* Login Screen */
+    #login-screen {
+      position: fixed; inset: 0; background: var(--bg-dark);
+      display: flex; align-items: center; justify-content: center; z-index: 1000;
+    }
+    .login-box {
+      background: rgba(18, 30, 24, 0.9); padding: 2rem; border-radius: 16px;
+      border: 1px solid var(--gold); text-align: center; width: 350px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Login Screen -->
+  <div id="login-screen">
+    <div class="login-box">
+      <h2>تسجيل الدخول للإدارة</h2>
+      <div class="form-group">
+        <input type="password" id="admin-password" placeholder="كلمة المرور..." onkeyup="if(event.key === 'Enter') attemptLogin()">
+      </div>
+      <button onclick="attemptLogin()">دخول</button>
+      <p id="login-error" style="color:#e74c3c; margin-top:1rem; display:none;">كلمة المرور خاطئة</p>
+    </div>
+  </div>
+
+  <!-- Admin Panel -->
+  <div class="admin-container" id="admin-panel" style="display:none;">
+    <h1>لوحة تحكم دار ابن الجزري</h1>
+    
+    <!-- Student of the Week -->
+    <section>
+      <h2>نجم الأسبوع</h2>
+      <div class="form-group">
+        <label>الاسم</label>
+        <input type="text" id="student-name">
+      </div>
+      <div class="form-group">
+        <label>الإنجاز</label>
+        <input type="text" id="student-ach">
+      </div>
+      <div class="form-group">
+        <label>صورة الطالب</label>
+        <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 0.5rem; color: white;">
+          <label style="font-weight: normal; margin: 0; cursor: pointer;"><input type="radio" name="student_img_type" value="boy" checked onchange="handleImageSelection(this)"> صورة ولد صماء</label>
+          <label style="font-weight: normal; margin: 0; cursor: pointer;"><input type="radio" name="student_img_type" value="girl" onchange="handleImageSelection(this)"> صورة بنت صماء</label>
+          <label style="font-weight: normal; margin: 0; cursor: pointer;"><input type="radio" name="student_img_type" value="upload" onchange="handleImageSelection(this)"> رفع صورة مخصصة</label>
+        </div>
+        <input type="file" id="student-upload" accept="image/*" style="display: none; margin-top: 10px;" onchange="handleImageUpload(event)">
+        <input type="hidden" id="student-image" value="boy.png">
+        <div style="margin-top: 10px;">
+           <img id="preview-img" src="boy.png" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid var(--gold);">
+        </div>
+      </div>
+      <button onclick="saveStudent()">حفظ نجم الأسبوع</button>
+    </section>
+
+    <!-- Best Teacher -->
+    <section>
+      <h2>أفضل محفظ/ة في الشهر</h2>
+      <div class="form-group">
+        <label>الاسم</label>
+        <input type="text" id="teacher-name">
+      </div>
+      <div class="form-group">
+        <label>التكريم / الإنجاز</label>
+        <input type="text" id="teacher-ach">
+      </div>
+      <div class="form-group">
+        <label>صورة المحفظ/ة</label>
+        <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 0.5rem; color: white;">
+          <label style="font-weight: normal; margin: 0; cursor: pointer;"><input type="radio" name="teacher_img_type" value="boy" onchange="handleTeacherImageSelection(this)"> صورة محفظ صماء</label>
+          <label style="font-weight: normal; margin: 0; cursor: pointer;"><input type="radio" name="teacher_img_type" value="girl" checked onchange="handleTeacherImageSelection(this)"> صورة محفظة صماء</label>
+          <label style="font-weight: normal; margin: 0; cursor: pointer;"><input type="radio" name="teacher_img_type" value="upload" onchange="handleTeacherImageSelection(this)"> رفع صورة مخصصة</label>
+        </div>
+        <input type="file" id="teacher-upload" accept="image/*" style="display: none; margin-top: 10px;" onchange="handleTeacherImageUpload(event)">
+        <input type="hidden" id="teacher-image" value="girl.png">
+        <div style="margin-top: 10px;">
+           <img id="teacher-preview-img" src="girl.png" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid var(--gold);">
+        </div>
+      </div>
+      <button onclick="saveTeacher()">حفظ بيانات المحفظ/ة</button>
+    </section>
+
+    <!-- Announcements -->
+    <section>
+      <h2>إعلانات المركز</h2>
+      <div class="form-group">
+        <label>عنوان الإعلان</label>
+        <input type="text" id="ann-title">
+      </div>
+      <div class="form-group">
+        <label>التفاصيل</label>
+        <textarea id="ann-desc"></textarea>
+      </div>
+      <div class="form-group">
+        <label>إرفاق بوستر (صورة الإعلان - اختياري)</label>
+        <input type="file" id="ann-upload" accept="image/*" onchange="handleAnnImageUpload(event)" style="display: block; margin-top: 10px;">
+        <input type="hidden" id="ann-image-data">
+        <div style="margin-top: 10px;">
+           <img id="ann-preview-img" style="max-width: 100%; max-height: 200px; display: none; border-radius: 8px; border: 1px solid var(--gold);">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>الرمز (Icon)</label>
+        <input type="text" id="ann-icon" value="📢">
+      </div>
+      <button onclick="addAnnouncement()">إضافة إعلان جديد</button>
+
+      <h3 style="color:var(--text-light); margin-top:1.5rem;">الإعلانات الحالية</h3>
+      <div id="announcements-list" class="item-list"></div>
+    </section>
+
+    <!-- Schedule -->
+    <section>
+      <h2>مواعيد الحلقات</h2>
+      <div id="schedule-list" class="item-list" style="margin-bottom:1rem;"></div>
+      <div style="background:rgba(0,0,0,0.2); padding:1rem; border-radius:8px;">
+        <div class="form-group">
+          <label>الوقت</label>
+          <input type="text" id="sch-time" placeholder="مثال: 9:00 ص - 4:00 م">
+        </div>
+        <div class="form-group">
+          <label>الوصف</label>
+          <input type="text" id="sch-name" placeholder="حلقات التحفيظ والمراجعة">
+        </div>
+        <div class="form-group">
+          <label>النص الجانبي</label>
+          <input type="text" id="sch-badgeText" placeholder="للرجال">
+        </div>
+        <div class="form-group">
+          <label>نوع التصميم (Badge Class)</label>
+          <input type="text" id="sch-badge" value="memorization" placeholder="memorization | review | tajweed">
+        </div>
+        <button onclick="addSchedule()">إضافة موعد</button>
+      </div>
+    </section>
+    
+    <!-- Settings -->
+    <section>
+      <h2>إعدادات النظام</h2>
+      <div class="form-group">
+        <label>تغيير كلمة المرور</label>
+        <input type="password" id="new-password" placeholder="كلمة المرور الجديدة">
+      </div>
+      <button onclick="changePassword()">حفظ كلمة المرور</button>
+      <button onclick="logout()" class="btn-danger" style="margin-right: 1rem;">تسجيل الخروج</button>
+      <a href="index.html" style="color: var(--gold); margin-right: 1rem;">العودة للداشبورد</a>
+    </section>
+
+  </div>
+
+  <!-- Scripts -->
+  <script src="db.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>
